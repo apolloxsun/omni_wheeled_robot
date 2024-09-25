@@ -28,6 +28,17 @@ float normaliseAngle();
 float degreesToRadians();
 float reduceToNinety();
 
+const byte numChars = 32;
+char receivedChars[numChars];
+char tempChars[numChars];        // temporary array for use when parsing
+
+      // variables to hold the parsed data
+
+float angle = 0.0;
+float length = 0.0;
+
+boolean newData = false;
+
 int speedVal = 0;
 float readVal;
 
@@ -38,8 +49,6 @@ float radiansY;
 float normalAng;
 float speedX;
 float speedY;
-
-int length = 10;
 
 void setup() {
   //setting pinmodes
@@ -53,10 +62,10 @@ void setup() {
   digitalWrite(md1_EN, HIGH); digitalWrite(md2_EN, HIGH);//enable pins
   digitalWrite(motor1_D1, LOW); digitalWrite(motor1_D2, HIGH); digitalWrite(motor1_IN1, LOW); digitalWrite(motor1_IN2, LOW); //motor1
   digitalWrite(motor2_D1, LOW); digitalWrite(motor2_D2, HIGH); digitalWrite(motor2_IN1, LOW); digitalWrite(motor2_IN2, LOW);//motor2
-  digitalWrite(motor3_D1, LOW); digitalWrite(motor3_D2, HIGH); digitalWrite(motor3_IN2, LOW); digitalWrite(motor3_IN2, LOW);//motor3
-  digitalWrite(motor4_D1, LOW); digitalWrite(motor4_D2, HIGH); digitalWrite(motor4_IN2, LOW); digitalWrite(motor4_IN2, LOW);//motor4
+  digitalWrite(motor3_D1, LOW); digitalWrite(motor3_D2, HIGH); digitalWrite(motor3_IN1, LOW); digitalWrite(motor3_IN2, LOW);//motor3
+  digitalWrite(motor4_D1, LOW); digitalWrite(motor4_D2, HIGH); digitalWrite(motor4_IN1, LOW); digitalWrite(motor4_IN2, LOW);//motor4
 
-  analogWrite(motor1_IN1, 50);  analogWrite(motor2_IN1, 50);  analogWrite(motor3_IN2, 50);  analogWrite(motor4_IN2, 50);
+  //analogWrite(motor1_IN1, 50);  analogWrite(motor2_IN1, 50);  analogWrite(motor3_IN2, 50);  analogWrite(motor4_IN2, 50);
 
   Serial.begin(9600);
   Serial.println("Starting...");
@@ -66,13 +75,18 @@ void setup() {
 
 void loop() {
   //getting angle value
-  if(Serial.available() > 0){
-  readVal = Serial.parseFloat();
-    if (readVal != 0 || Serial.peek() == '\n') { // Check if readVal is not zero and the next char is newline
-      givenAng = readVal - 45; // Update only if a valid float was received
-    }  }
+    recvWithStartEndMarkers();
+  if (newData == true) {
+      strcpy(tempChars, receivedChars);
+          // this temporary copy is necessary to protect the original data
+          //   because strtok() used in parseData() replaces the commas with \0
+      parseData();
+      givenAng = angle - 45.0;
+      newData = false;
+  }
+
   //processing angle data
-  Serial.println(givenAng);
+
   radiansX = degreesToRadians(reduceToNinety(normaliseAngle(givenAng)));
   radiansY = PI/2 - radiansX;
   Serial.print("radians : ");
@@ -82,8 +96,15 @@ void loop() {
 
   float length1 = abs(length*cos(radiansX));
   float length2 = abs(length*cos(radiansY));
-  speedX = map(length1, 0, 10, 10, 100);
-  speedY = map(length2, 0, 10, 10, 100);
+  if(length != 0){
+  speedX = map(length1, 0, 10, 0, 100);
+  speedY = map(length2, 0, 10, 0, 100); }
+  else{
+  digitalWrite(motor1_IN1, LOW); digitalWrite(motor1_IN2, LOW); //motor1
+  digitalWrite(motor2_IN1, LOW); digitalWrite(motor2_IN2, LOW);//motor2
+  digitalWrite(motor3_IN1, LOW); digitalWrite(motor3_IN2, LOW);//motor3
+  digitalWrite(motor4_IN1, LOW); digitalWrite(motor4_IN2, LOW);//motor4
+  }
   Serial.print("length : ");
   Serial.print(length1);
   Serial.print(" ");
@@ -124,8 +145,7 @@ void loop() {
     analogWrite(motor1_IN1, speedX); analogWrite(motor2_IN2, speedY); analogWrite(motor3_IN2, speedX); analogWrite(motor4_IN1, speedY);
   }
 
-  delay(1000);
-
+  delay(5);
 }
 
 
@@ -150,4 +170,52 @@ float reduceToNinety(float d){
     d-=90;
   }
   return d;
+}
+
+//=================
+
+void recvWithStartEndMarkers() {
+    static boolean recvInProgress = false;
+    static byte ndx = 0;
+    char startMarker = '<';
+    char endMarker = '>';
+    char rc;
+
+    while (Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+
+        if (recvInProgress == true) {
+            if (rc != endMarker) {
+                receivedChars[ndx] = rc;
+                ndx++;
+                if (ndx >= numChars) {
+                    ndx = numChars - 1;
+                }
+            }
+            else {
+                receivedChars[ndx] = '\0'; // terminate the string
+                recvInProgress = false;
+                ndx = 0;
+                newData = true;
+            }
+        }
+
+        else if (rc == startMarker) {
+            recvInProgress = true;
+        }
+    }
+}
+
+//============
+
+float parseData() {      // split the data into its parts
+
+    char * strtokIndx; // this is used by strtok() as an index
+
+    strtokIndx = strtok(tempChars,",");      // get the first part - the string
+    angle = atof(strtokIndx);     // convert this part to a float
+
+    strtokIndx = strtok(NULL, ",");
+    length = atof(strtokIndx);     // convert this part to a float
+
 }
