@@ -54,18 +54,23 @@ class joystick:
 
 
             # Print joystick position (you can send this via Bluetooth to the Arduino)
-            self.current_angle = math.degrees(math.atan2(dx, dy))  # In degrees, relative to the x-axis
+            self.current_angle = math.degrees(math.atan2(dx, dy)) - 90 # In degrees, relative to the x-axis
             if self.current_angle < 0:
                 self.current_angle += 360  # Ensure the angle is positive (0 to 360 degrees)
 
-            # Print and send the angle
-            print(f"Joystick Angle: {self.current_angle:.2f} degrees")
-            self.send_angle_to_arduino(self.current_angle)
+            self.current_length = math.sqrt((self.current_x)**2 + (self.current_y)**2) * 10
+            if self.current_length<1:
+                 self.current_length = 0
 
-    def send_angle_to_arduino(self, angle):
-        # Send the angle data over Bluetooth
-        angle_data = f"{angle:.2f}\n"  # Format the angle as a string with two decimal places
-        ser.write(angle_data.encode())  # Send data via serial (Bluetooth)
+            # Print and send the angle and length
+            print(f"Joystick Angle: {self.current_angle:.2f} degrees")
+            print(f"Joystick Length: {self.current_length:.2f}")
+            self.send_data_to_arduino(self.current_angle, self.current_length)  # Updated
+
+    def send_data_to_arduino(self, angle, length):
+        # **Format the data as <angle, length>**
+        data = f"<{angle:.2f}, {length:.2f}>\n"  # Updated format
+        ser.write(data.encode())  # Send the formatted data via Bluetooth
         time.sleep(0.1)  # Small delay to ensure data is sent
 
     def reset_knob(self, event):
@@ -78,20 +83,14 @@ class joystick:
         # Reset position to (0, 0)
         self.current_x = 0
         self.current_y = 0
+        self.current_length = 0
 
         # Print the reset position
         print(f"Joystick Position: X: {self.current_x:.2f}, Y: {self.current_y:.2f}")
+        self.send_data_to_arduino(0, 0)
+
 
 ser = serial.Serial('COM6',9600,timeout=1)
-
-def send_data():
-    # Get data from input field
-    data = entry.get()
-    if data:
-        ser.write(data.encode())  # Send the data over Bluetooth
-        time.sleep(1)  # Optional: Allow some time for the device to process
-        response = ser.readline().decode().strip()  # Read the response (if any)
-        label_response.config(text=f"Arduino Response: {response}")  # Update the UI with the response
 
 # Close the serial connection when closing the window
 def on_closing():
@@ -101,19 +100,6 @@ def on_closing():
 # Create the Tkinter UI
 root = tk.Tk()
 root.title("Bluetooth Serial Communicator with Joystick")
-
-# Create UI elements
-label = tk.Label(root, text="Enter Data to Send to Arduino:")
-label.pack()
-
-entry = tk.Entry(root)
-entry.pack()
-
-button_send = tk.Button(root, text="Send", command=send_data)
-button_send.pack()
-
-label_response = tk.Label(root, text="")
-label_response.pack()
 
 # Handle window closing
 root.protocol("WM_DELETE_WINDOW", on_closing)
