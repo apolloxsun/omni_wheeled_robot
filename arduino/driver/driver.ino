@@ -29,10 +29,10 @@ float degreesToRadians();
 float reduceToNinety();
 
 int speedVal = 0;
-float readVal = 0;
+float readVal;
 
 float givenAng = 0;
-String radians;
+float radians;
 float radiansX;
 float radiansY;
 float normalAng;
@@ -67,9 +67,9 @@ void setup() {
 void loop() {
   //getting angle value
   if(Serial.available() > 0){
-  readVal = Serial.readStringUntil(".");
+  readVal = Serial.parseFloat();
     if (readVal != 0 || Serial.peek() == '\n') { // Check if readVal is not zero and the next char is newline
-      givenAng = readVal.toFloat() - 45; // Update only if a valid float was received
+      givenAng = readVal - 45; // Update only if a valid float was received
     }  }
   //processing angle data
   Serial.println(givenAng);
