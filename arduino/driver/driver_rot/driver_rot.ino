@@ -118,6 +118,46 @@ void loop() {
   float motor3_length = length1 + length3;
   float motor4_length = length2 - length3;
 
+  //=========================
+
+  if(motor1_length>0){
+    digitalWrite(motor1_IN1, HIGH); digitalWrite(motor1_IN2, LOW);
+    analogWrite(motor1_IN1, map(motor1_length, 0, 20, 0, 100));
+  }
+  else{
+    digitalWrite(motor1_IN1, LOW); digitalWrite(motor1_IN2, HIGH);
+    analogWrite(motor1_IN2, map(motor1_length, 0, 20, 0, 100));
+  }
+
+  if(motor2_length<0){
+    digitalWrite(motor2_IN1, HIGH); digitalWrite(motor2_IN2, LOW);
+    analogWrite(motor2_IN1, map(motor2_length, 0, 20, 0, 100));
+  }
+  else{
+    digitalWrite(motor2_IN1, LOW); digitalWrite(motor2_IN2, HIGH);
+    analogWrite(motor2_IN2, map(motor2_length, 0, 20, 0, 100));
+  }  
+  
+  if(motor3_length>0){
+    digitalWrite(motor3_IN1, HIGH); digitalWrite(motor3_IN2, LOW);
+    analogWrite(motor3_IN1, map(motor3_length, 0, 20, 0, 100));
+  }
+  else{
+    digitalWrite(motor3_IN1, LOW); digitalWrite(motor3_IN2, HIGH);
+    analogWrite(motor3_IN2, map(motor3_length, 0, 20, 0, 100));
+  }  
+  
+  if(motor4_length<0){
+    digitalWrite(motor4_IN1, HIGH); digitalWrite(motor4_IN2, LOW);
+    analogWrite(motor4_IN1, map(motor4_length, 0, 20, 0, 100));
+  }
+  else{
+    digitalWrite(motor4_IN1, LOW); digitalWrite(motor4_IN2, HIGH);
+    analogWrite(motor4_IN2, map(motor4_length, 0, 20, 0, 100));
+  }
+
+  //========================
+
   if(length != 0 && rot_length != 0){
   speedX = map(length1, 0, 10, 0, 100);
   speedY = map(length2, 0, 10, 0, 100); }
@@ -172,7 +212,7 @@ void loop() {
   //   analogWrite(motor1_IN1, speedY); analogWrite(motor2_IN2, speedX); analogWrite(motor3_IN2, speedY); analogWrite(motor4_IN1, speedX);
   // }
 
-  delay(1000);
+  delay(5);
 }
 
 
