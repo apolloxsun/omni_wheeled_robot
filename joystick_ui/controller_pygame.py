@@ -69,6 +69,8 @@ while True:
 
     pygame.display.update()
 
+    joystick_inst.send_data_to_arduino(angle, length, rot_angle, rot_length)
+
     time.sleep(0.01)  # Sleep briefly to avoid excessive CPU usage
 
     for event in pygame.event.get():
